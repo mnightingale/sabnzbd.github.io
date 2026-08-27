@@ -66,6 +66,13 @@ Direct Write relies on the following settings:
    - For very fast lines and SSD/NVMe storage: consider higher values if you have free RAM.
    - As a rule of thumb, try to size the cache so that it can hold at least one of your "typical" files in memory.
 
+3. **Direct Decode switch** (on by default)
+
+   - Location: [Config->Special](/wiki/configuration/{{ site.wiki_version }}/special#toc0), option `direct_decode`.
+   - Writes each article to its position as it is decoded, so it never enters the Article Cache at all. This is what keeps memory use flat on a fast line.
+   - It needs Direct Write, since it relies on the same offsets and sparse file.
+   - SABnzbd measures what the disk absorbs and returns to filling the cache whenever it stops keeping up, so it is safe to leave on: a disk that cannot take scattered writes simply never gets them.
+
 # Requirements and limitations
 
 ## Filesystem support (sparse files)
@@ -96,6 +103,12 @@ When an Article Cache is configured, Direct Write and the cache work together:
 - By default SABnzbd prefers sequential writes from the cache, only performing non-contiguous writes when cache pressure forces it.
 
 When no Article Cache is configured (set to `0`), Direct Write operates independently by writing each decoded article directly to its position in the sparse file. This avoids the need for temporary files but produces many small random writes. This mode is only recommended on SSD/NVMe storage where random write performance is not a concern.
+
+# When the disk is slower than the line
+
+SABnzbd measures how fast the download folder is taking writes and holds the download to what it can absorb, so a slow disk shows up as a lower download speed rather than as stalls. It also slows down as the Article Cache fills, which keeps articles from being pushed out to temporary files in the job's admin folder - those have to be read back and written again later, and on a disk that is already the bottleneck that is the worst place to spend it.
+
+There is nothing to configure for this. If your download speed sits below your line speed and the Article Cache stays full, the disk is the limit.
 
 <span class="label label-info">TIP</span> For high-speed setups, first tune the Article Cache Limit (see [High speed Downloading](/wiki/advanced/highspeed-downloading)), then enable Direct Write and monitor CPU, disk and RAM usage in the Status window.
 
